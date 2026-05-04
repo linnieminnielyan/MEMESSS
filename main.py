@@ -34,6 +34,7 @@ def init_db():
             image_path TEXT NOT NULL,
             top_text TEXT NOT NULL,
             bottom_text TEXT NOT NULL,
+            text_color TEXT DEFAULT 'white',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users (id)
         )
@@ -41,17 +42,7 @@ def init_db():
     conn.commit()
     conn.close()
 
-def update_db():
-    conn = get_db()
-    try:
-        conn.execute('ALTER TABLE memes ADD COLUMN text_color TEXT DEFAULT "white"')
-        conn.commit()
-        print("База данных обновлена")
-    except:
-        print("Колонка уже существует")
-    conn.close()
 
-update_db()
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -62,6 +53,7 @@ def login_required(f):
 
     return decorated_function
 
+
 def create_meme(image_path, top_text, bottom_text, output_path, text_color='white'):
     img = Image.open(image_path)
     if img.mode != 'RGB':
@@ -69,50 +61,57 @@ def create_meme(image_path, top_text, bottom_text, output_path, text_color='whit
 
     draw = ImageDraw.Draw(img)
     width, height = img.size
+    font_size = int(height / 12)
 
-    font_size = int(height / 10)
-
-    # Загружаем шрифт
     font = None
-    font_size = int(height / 10)
-
-    # Пути к шрифту (сначала ищем в static/fonts/)
-    possible_fonts = [
-        os.path.join('static', 'fonts', 'ofont.ru_Impact.ttf'),
-        'static/fonts/ofont.ru_Impact.ttf',
-        'ofont.ru_Impact.ttf',
-        'impact.ttf',
-        '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'
-    ]
-
-    for font_path in possible_fonts:
+    try:
+        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", font_size)
+    except:
         try:
-            font = ImageFont.truetype(font_path, font_size)
-            print(f"Шрифт загружен: {font_path}")
-            break
-        except Exception as e:
-            print(f"Не удалось загрузить {font_path}: {e}")
+            font = ImageFont.truetype("arial.ttf", font_size)
+        except:
+            font = ImageFont.load_default()
 
-    if font is None:
-        font = ImageFont.load_default()
-        print("Использую стандартный шрифт")
+    if text_color == 'pink':
+        main_color = (255, 182, 193)
+    else:
+        main_color = (255, 255, 255)
+
+    outline_color = (0, 0, 0)
+
+    def split_text(text, max_chars=25):
+        if not text:
+            return []
+        text = text.upper()
+        words = text.split()
+        lines = []
+        current_line = []
+        for word in words:
+            if len(' '.join(current_line + [word])) <= max_chars:
+                current_line.append(word)
+            else:
+                if current_line:
+                    lines.append(' '.join(current_line))
+                current_line = [word]
+        if current_line:
+            lines.append(' '.join(current_line))
+        return lines
 
     if top_text:
-        top_lines = split_text(top_text, 30)
-        y = 20
+        top_lines = split_text(top_text, 25)
+        y = 30
         for line in top_lines:
             bbox = draw.textbbox((0, 0), line, font=font)
             text_width = bbox[2] - bbox[0]
             text_height = bbox[3] - bbox[1]
             x = (width - text_width) // 2
-
             for dx, dy in [(-2, -2), (-2, 2), (2, -2), (2, 2), (0, -2), (0, 2), (-2, 0), (2, 0)]:
                 draw.text((x + dx, y + dy), line, font=font, fill=outline_color)
             draw.text((x, y), line, font=font, fill=main_color)
             y += text_height + 10
 
     if bottom_text:
-        bottom_lines = split_text(bottom_text, 30)
+        bottom_lines = split_text(bottom_text, 25)
         y = height - 80
         for line in reversed(bottom_lines):
             bbox = draw.textbbox((0, 0), line, font=font)
@@ -120,13 +119,13 @@ def create_meme(image_path, top_text, bottom_text, output_path, text_color='whit
             text_height = bbox[3] - bbox[1]
             x = (width - text_width) // 2
             y -= text_height
-
             for dx, dy in [(-2, -2), (-2, 2), (2, -2), (2, 2), (0, -2), (0, 2), (-2, 0), (2, 0)]:
                 draw.text((x + dx, y + dy), line, font=font, fill=outline_color)
             draw.text((x, y), line, font=font, fill=main_color)
             y -= 10
 
     img.save(output_path, 'JPEG', quality=95)
+
 
 @app.route('/')
 def auth():
@@ -165,7 +164,7 @@ def register():
     db.execute('INSERT INTO users (username, password) VALUES (?, ?)', (username, password))
     db.commit()
     db.close()
-    flash('Регистрация успешна! Теперь войдите')
+    flash('Регистрация успешна')
     return redirect(url_for('auth'))
 
 
@@ -176,6 +175,7 @@ def meme():
         if 'image' not in request.files:
             flash('Выберите картинку')
             return redirect(url_for('meme'))
+
         file = request.files['image']
         top_text = request.form.get('top_text', '')
         bottom_text = request.form.get('bottom_text', '')
@@ -205,6 +205,7 @@ def meme():
             flash('Мем создан')
         except Exception as e:
             flash(f'Ошибка: {e}')
+
         return redirect(url_for('meme'))
 
     db = get_db()
