@@ -61,25 +61,35 @@ def create_meme(image_path, top_text, bottom_text, output_path, text_color='whit
 
     draw = ImageDraw.Draw(img)
     width, height = img.size
-    font_size = int(height / 12)
+    font_size = int(height / 10)
 
     font = None
-    try:
-        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", font_size)
-    except:
-        try:
-            font = ImageFont.truetype("arial.ttf", font_size)
-        except:
-            font = ImageFont.load_default()
+    possible_paths = [
+        os.path.join('static', 'fonts', 'impact-regular.ttf'),
+        os.path.join('static', 'fonts', 'impact.ttf'),
+        'impact-regular.ttf',
+        'impact.ttf',
+        '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'
+    ]
+
+    for font_path in possible_paths:
+        if os.path.exists(font_path):
+            try:
+                font = ImageFont.truetype(font_path, font_size)
+                break
+            except:
+                continue
+
+    if font is None:
+        font = ImageFont.load_default()
 
     if text_color == 'pink':
         main_color = (255, 182, 193)
     else:
         main_color = (255, 255, 255)
-
     outline_color = (0, 0, 0)
 
-    def split_text(text, max_chars=25):
+    def split_text(text, max_chars=30):
         if not text:
             return []
         text = text.upper()
@@ -98,7 +108,7 @@ def create_meme(image_path, top_text, bottom_text, output_path, text_color='whit
         return lines
 
     if top_text:
-        top_lines = split_text(top_text, 25)
+        top_lines = split_text(top_text, 30)
         y = 30
         for line in top_lines:
             bbox = draw.textbbox((0, 0), line, font=font)
@@ -111,7 +121,7 @@ def create_meme(image_path, top_text, bottom_text, output_path, text_color='whit
             y += text_height + 10
 
     if bottom_text:
-        bottom_lines = split_text(bottom_text, 25)
+        bottom_lines = split_text(bottom_text, 30)
         y = height - 80
         for line in reversed(bottom_lines):
             bbox = draw.textbbox((0, 0), line, font=font)
