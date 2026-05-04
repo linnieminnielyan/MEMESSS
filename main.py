@@ -72,43 +72,30 @@ def create_meme(image_path, top_text, bottom_text, output_path, text_color='whit
 
     font_size = int(height / 10)
 
+    # Загружаем шрифт
     font = None
-    possible_fonts = ["impact.ttf", "ofont.ru_Impact.ttf", "ofont.ru_Impact", "Impact.ttf", "arial.ttf"]
+    font_size = int(height / 10)
 
-    for font_name in possible_fonts:
+    # Пути к шрифту (сначала ищем в static/fonts/)
+    possible_fonts = [
+        os.path.join('static', 'fonts', 'ofont.ru_Impact.ttf'),
+        'static/fonts/ofont.ru_Impact.ttf',
+        'ofont.ru_Impact.ttf',
+        'impact.ttf',
+        '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'
+    ]
+
+    for font_path in possible_fonts:
         try:
-            font = ImageFont.truetype(font_name, font_size)
+            font = ImageFont.truetype(font_path, font_size)
+            print(f"Шрифт загружен: {font_path}")
             break
-        except:
-            continue
+        except Exception as e:
+            print(f"Не удалось загрузить {font_path}: {e}")
 
     if font is None:
         font = ImageFont.load_default()
-
-    if text_color == 'pink':
-        main_color = (255, 182, 193)
-        outline_color = 'black'
-    else:
-        main_color = 'white'
-        outline_color = 'black'
-
-    def split_text(text, max_chars=30):
-        if not text:
-            return []
-        text = text.upper()
-        words = text.split()
-        lines = []
-        current_line = []
-        for word in words:
-            if len(' '.join(current_line + [word])) <= max_chars:
-                current_line.append(word)
-            else:
-                if current_line:
-                    lines.append(' '.join(current_line))
-                current_line = [word]
-        if current_line:
-            lines.append(' '.join(current_line))
-        return lines
+        print("Использую стандартный шрифт")
 
     if top_text:
         top_lines = split_text(top_text, 30)
