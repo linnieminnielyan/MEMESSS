@@ -66,17 +66,11 @@ def create_meme(image_path, top_text, bottom_text, output_path, text_color='whit
     img = Image.open(image_path)
     if img.mode != 'RGB':
         img = img.convert('RGB')
-
     draw = ImageDraw.Draw(img)
     width, height = img.size
-
     font_size = int(height / 10)
-
-    # Загружаем шрифт
     font = None
     font_size = int(height / 10)
-
-    # Пути к шрифту (сначала ищем в static/fonts/)
     possible_fonts = [
         os.path.join('static', 'fonts', 'ofont.ru_Impact.ttf'),
         'static/fonts/ofont.ru_Impact.ttf',
