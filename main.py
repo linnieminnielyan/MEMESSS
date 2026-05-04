@@ -10,7 +10,6 @@ app.secret_key = 'секретныйключ123'
 
 os.makedirs('static/uploads', exist_ok=True)
 os.makedirs('static/memes', exist_ok=True)
-os.makedirs('static/fonts', exist_ok=True)
 
 
 def get_db():
@@ -99,9 +98,9 @@ def create_meme(image_path, top_text, bottom_text, output_path, text_color='whit
         return lines
 
     if top_text:
-        lines = split_text(top_text, 25)
+        top_lines = split_text(top_text, 25)
         y = 30
-        for line in lines:
+        for line in top_lines:
             bbox = draw.textbbox((0, 0), line, font=font)
             text_width = bbox[2] - bbox[0]
             text_height = bbox[3] - bbox[1]
@@ -112,9 +111,9 @@ def create_meme(image_path, top_text, bottom_text, output_path, text_color='whit
             y += text_height + 10
 
     if bottom_text:
-        lines = split_text(bottom_text, 25)
+        bottom_lines = split_text(bottom_text, 25)
         y = height - 80
-        for line in reversed(lines):
+        for line in reversed(bottom_lines):
             bbox = draw.textbbox((0, 0), line, font=font)
             text_width = bbox[2] - bbox[0]
             text_height = bbox[3] - bbox[1]
